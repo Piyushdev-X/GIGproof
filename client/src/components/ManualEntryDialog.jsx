@@ -46,28 +46,84 @@ export default function ManualEntryDialog({ open, onClose }) {
       }
       const { data, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
-      const accessToken = data.session?.access_token;
+      const session = data.session;
+      const accessToken = session?.access_token;
       if (!accessToken) throw new Error('Sign in to save an income entry.');
 
-      const response = await fetch('/api/income/manual', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ payoutDate: date, amount: Number(amount), platform: sourcePlatform }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(response.status === 401 ? 'Sign in to save an income entry.' : (result.error?.message || 'We could not save this income entry.'));
+      let saved = false;
+      try {
+        const response = await fetch('/api/income/manual', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ payoutDate: date, amount: Number(amount), platform: sourcePlatform }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (response.ok) {
+          saved = true;
+        } else if (response.status === 401) {
+          throw new Error('Sign in to save an income entry.');
+        } else {
+          console.warn('API error, attempting direct Supabase fallback:', result);
+        }
+      } catch (fetchErr) {
+        if (fetchErr.message === 'Sign in to save an income entry.') throw fetchErr;
+        console.warn('API route unreachable, attempting direct Supabase fallback:', fetchErr);
       }
+
+      if (!saved) {
+        const user = session.user;
+        const userId = user.id;
+        const userEmail = user.email || `${userId}@anonymous.gigproof`;
+
+        // Ensure user row exists in public.users
+        await supabase.from('users').upsert(
+          { id: userId, email: userEmail },
+          { onConflict: 'id', ignoreDuplicates: true }
+        );
+
+        // Find or create connection
+        const { data: existingConnection, error: lookupErr } = await supabase
+          .from('gig_connections')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('platform', sourcePlatform)
+          .maybeSingle();
+        if (lookupErr) throw new Error(lookupErr.message);
+
+        let connectionId = existingConnection?.id;
+        if (!connectionId) {
+          const { data: newConnection, error: connErr } = await supabase
+            .from('gig_connections')
+            .insert({ user_id: userId, platform: sourcePlatform, status: 'manual' })
+            .select('id')
+            .single();
+          if (connErr) throw new Error(connErr.message);
+          connectionId = newConnection.id;
+        }
+
+        // Insert payout record
+        const { error: payoutErr } = await supabase
+          .from('income_payouts')
+          .insert({
+            connection_id: connectionId,
+            payout_date: date,
+            amount: Number(amount),
+            is_verified: false,
+            source_type: 'manual',
+          });
+        if (payoutErr) throw new Error(payoutErr.message);
+      }
+
       setSuccess('Income added as self-reported. It is not API verified.');
       window.setTimeout(() => {
         resetForm();
         onClose();
       }, 900);
     } catch (submitError) {
-      setError(submitError.message || 'Unable to reach the income service. Try again.');
+      setError(submitError.message || 'Unable to save income entry. Try again.');
     } finally {
       setBusy(false);
     }
