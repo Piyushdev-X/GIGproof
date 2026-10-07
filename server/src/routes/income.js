@@ -48,7 +48,7 @@ router.post('/manual', async (req, res) => {
     const userId = context.jwtClaims.sub;
     const userEmail = context.jwtClaims.email || `${userId}@anonymous.gigproof`;
     const platform = parsed.data.platform;
-    const supabase = context.supabaseAdmin;
+    const supabase = context.supabaseAdmin || context.supabase;
 
     // Ensure the user row exists in public.users to satisfy foreign key constraints
     await supabase.from('users').upsert(
@@ -106,7 +106,7 @@ router.get('/score', async (req, res) => {
   try {
     const context = await requireUser(req, res);
     if (!context) return;
-    const supabase = context.supabaseAdmin;
+    const supabase = context.supabaseAdmin || context.supabase;
     const userId = context.jwtClaims.sub;
 
     const { data: connections, error: connectionsError } = await supabase
