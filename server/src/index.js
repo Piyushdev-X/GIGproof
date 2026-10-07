@@ -15,7 +15,19 @@ app.disable('x-powered-by');
 app.use(helmet());
 app.use(cors({
   origin(origin, callback) {
-    callback(null, !origin || allowedOrigins.has(origin));
+    if (!origin || allowedOrigins.has(origin)) {
+      return callback(null, true);
+    }
+    if (process.env.VERCEL_URL && (origin === `https://${process.env.VERCEL_URL}` || origin === `http://${process.env.VERCEL_URL}`)) {
+      return callback(null, true);
+    }
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL && (origin === `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` || origin === `http://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`)) {
+      return callback(null, true);
+    }
+    if (process.env.VERCEL && origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    callback(null, false);
   },
   credentials: false,
   methods: ['GET', 'POST', 'OPTIONS'],
