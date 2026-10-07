@@ -297,3 +297,53 @@ h1, h2, p { margin-top: 0; }
   .landing-steps h3 { margin-top: 12px; }
   .landing-final-cta { align-items: flex-start; flex-direction: column; padding: 27px 22px; }
 }
+
+/* ── Guest login button (Auth page) ── */
+.guest-divider { align-items: center; display: flex; gap: 14px; margin: 20px 0 16px; }
+.guest-divider::before, .guest-divider::after { background: #e4e7e0; content: ''; flex: 1; height: 1px; }
+.guest-divider span { color: #9ea79f; font-size: 11px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
+
+.guest-login-button { align-items: center; background: #fffefa; border: 1.5px dashed #b9c4b5; border-radius: 8px; color: #3b5e47; cursor: pointer; display: flex; font-size: 13px; font-weight: 600; gap: 10px; justify-content: center; min-height: 48px; padding: 0 18px; transition: background-color .18s ease, border-color .18s ease, transform .15s ease; width: 100%; }
+.guest-login-button:hover { background: #f3f7ee; border-color: #7c9b7e; transform: translateY(-1px); }
+.guest-login-button:disabled { cursor: wait; opacity: .7; }
+
+.guest-spinner { animation: spin .7s linear infinite; border: 2px solid #d3dfd1; border-radius: 50%; border-top-color: #3b5e47; display: inline-block; height: 16px; width: 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Guest banner (Dashboard) ── */
+.guest-banner { background: linear-gradient(135deg, #fef9ec 0%, #fdf3db 100%); border: 1px solid #eed9a3; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+.guest-banner-inner { align-items: flex-start; display: flex; gap: 12px; padding: 14px 16px; }
+.guest-banner-icon { color: #b5892e; flex: 0 0 auto; margin-top: 1px; }
+.guest-banner-copy { flex: 1; min-width: 0; }
+.guest-banner-text { color: #5c4a1e; font-size: 12px; line-height: 1.55; margin: 0; }
+.guest-banner-text strong { color: #3d310f; font-weight: 700; }
+.guest-banner-cta { background: none; border: 0; color: #8a6517; cursor: pointer; font-size: 12px; font-weight: 700; margin-top: 4px; padding: 0; text-decoration: underline; text-underline-offset: 3px; transition: color .15s ease; }
+.guest-banner-cta:hover { color: #604609; }
+.guest-banner-success { color: #456b4a; font-size: 11px; margin: 6px 0 0; }
+.guest-banner-dismiss { background: none; border: 0; border-radius: 4px; color: #c4a34e; cursor: pointer; flex: 0 0 auto; padding: 4px; }
+.guest-banner-dismiss:hover { background: rgba(180, 140, 45, .12); color: #8a6517; }
+
+/* ── Guest convert form (inside banner) ── */
+.guest-convert-form { border-top: 1px solid #eed9a3; padding: 14px 16px 16px; }
+.guest-convert-fields { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.guest-convert-label { color: #5c4a1e; font-size: 10px; font-weight: 600; display: grid; gap: 5px; }
+.guest-convert-input { background: #fffefa; border: 1px solid #e0d4b0; border-radius: 5px; color: #3d310f; font-size: 12px; min-height: 40px; padding: 0 10px; width: 100%; }
+.guest-convert-input:focus { border-color: #b5892e; outline: 2px solid #f0dfa8; }
+.guest-convert-error { color: #9a463a; font-size: 10px; margin: 8px 0 0; }
+.guest-convert-actions { display: flex; gap: 10px; margin-top: 12px; }
+.guest-convert-submit { align-items: center; background: #193d32; border: 0; border-radius: 5px; color: #fffefa; cursor: pointer; display: inline-flex; font-size: 12px; font-weight: 600; justify-content: center; min-height: 38px; padding: 0 16px; transition: background-color .15s ease; }
+.guest-convert-submit:hover { background: #285443; }
+.guest-convert-submit:disabled { cursor: wait; opacity: .7; }
+.guest-convert-cancel { background: none; border: 1px solid #e0d4b0; border-radius: 5px; color: #5c4a1e; cursor: pointer; font-size: 11px; min-height: 38px; padding: 0 14px; }
+.guest-convert-cancel:hover { background: #fdf3db; }
+
+/* ── Sidebar guest notice ── */
+.rail-guest-notice { align-items: center; background: rgba(255, 255, 255, .08); border: 1px dashed rgba(255, 255, 255, .22); border-radius: 6px; color: #e8d5b3; display: flex; font-size: 10px; gap: 8px; line-height: 1.45; margin-bottom: 14px; padding: 10px 11px; }
+.rail-guest-notice svg { color: #e8d5b3; flex: 0 0 auto; }
+.rail-guest-link { color: #f0dfa8; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.rail-guest-link:hover { color: #fffefa; }
+.avatar-guest { background: #c8d9ce; color: #193d32; font-size: 14px; }
+
+@media (max-width: 640px) {
+  .guest-convert-fields { grid-template-columns: 1fr; }
+}

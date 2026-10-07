@@ -9,10 +9,11 @@ import PayoutActivity from './components/PayoutActivity.jsx';
 import ConnectAccountDialog from './components/ConnectAccountDialog.jsx';
 import ManualEntryDialog from './components/ManualEntryDialog.jsx';
 import PdfExportButton from './components/PdfExportButton.jsx';
+import GuestBanner from './components/GuestBanner.jsx';
 import { formatCurrency, monthlyIncome } from './data/demoIncome.js';
 import { supabase } from './lib/supabase.js';
 
-function Dashboard({ userEmail, onSignOut, signOutBusy, signOutError }) {
+function Dashboard({ userEmail, isGuest, onSignOut, signOutBusy, signOutError }) {
   const [connectOpen, setConnectOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const sampleAnnualIncome = monthlyIncome.reduce((sum, month) => sum + month.total, 0);
@@ -21,7 +22,7 @@ function Dashboard({ userEmail, onSignOut, signOutBusy, signOutError }) {
 
   return (
     <div className="app-shell min-h-screen bg-paper text-ink" id="overview">
-      <DashboardSidebar userEmail={userEmail} onSignOut={onSignOut} signOutBusy={signOutBusy} />
+      <DashboardSidebar userEmail={userEmail} isGuest={isGuest} onSignOut={onSignOut} signOutBusy={signOutBusy} />
       <main className="workspace-main">
         <header className="mobile-topbar">
           <a className="brand-lockup" href="#overview" aria-label="Gigproof home"><span className="brand-mark" aria-hidden="true">g</span><span className="brand-name">gigproof<span>.</span></span></a>
@@ -33,6 +34,7 @@ function Dashboard({ userEmail, onSignOut, signOutBusy, signOutError }) {
           </div>
         </header>
         <div className="workspace-inner">
+          {isGuest && <GuestBanner />}
           <div className="page-title-row">
             <div>
               <p className="demo-label"><i />SAMPLE DASHBOARD <span>•</span> ILLUSTRATIVE DATA</p>
@@ -136,6 +138,7 @@ export default function App() {
   return (
     <Dashboard
       userEmail={session.user?.email || ''}
+      isGuest={session.user?.is_anonymous === true}
       onSignOut={handleSignOut}
       signOutBusy={signOutBusy}
       signOutError={signOutError}

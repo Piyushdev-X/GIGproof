@@ -6,6 +6,7 @@ export default function Auth({ initialError = '' }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  const [guestBusy, setGuestBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const isLogin = mode === 'login';
@@ -46,6 +47,27 @@ export default function Auth({ initialError = '' }) {
         : authMessage);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleGuestLogin() {
+    setError('');
+    setMessage('');
+
+    if (!supabase) {
+      setError('Gigproof could not connect to Supabase. Check the VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY settings, then restart the client.');
+      return;
+    }
+
+    setGuestBusy(true);
+    try {
+      const { error: guestError } = await supabase.auth.signInAnonymously();
+      if (guestError) throw guestError;
+      setMessage('Guest session started. Loading your dashboard…');
+    } catch (guestAuthError) {
+      setError(guestAuthError?.message || 'Guest login could not be completed. Please try again.');
+    } finally {
+      setGuestBusy(false);
     }
   }
 
@@ -116,11 +138,37 @@ export default function Auth({ initialError = '' }) {
             </label>
             {(error || initialError || configurationError) && <p className="rounded-md bg-[#fbefeb] px-3 py-2.5 text-sm leading-5 text-[#9b4636]" role="alert">{error || initialError || configurationError}</p>}
             {message && <p className="rounded-md bg-[#eef4eb] px-3 py-2.5 text-sm leading-5 text-[#355c43]" role="status">{message}</p>}
-            <button type="submit" disabled={busy}
+            <button type="submit" disabled={busy || guestBusy}
               className="flex min-h-12 w-full items-center justify-center rounded-md bg-[#193d32] px-4 text-sm font-semibold text-[#fffefa] transition hover:bg-[#285443] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a57b45] disabled:cursor-wait disabled:opacity-65">
               {busy ? 'Please wait…' : isLogin ? 'Log in to Gigproof' : 'Create account'}
             </button>
           </form>
+
+          <div className="guest-divider">
+            <span>or</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGuestLogin}
+            disabled={guestBusy || busy}
+            className="guest-login-button"
+            id="guest-login-btn"
+          >
+            {guestBusy ? (
+              <>
+                <span className="guest-spinner" aria-hidden="true" />
+                Setting up guest session…
+              </>
+            ) : (
+              <>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                Try it without an account
+              </>
+            )}
+          </button>
+          <p className="mt-2 text-center text-[10px] leading-4 text-[#8a9a8e]">No email needed — generate a sample proof of income instantly. Your data won't be saved.</p>
+
           <p className="mt-5 text-center text-[11px] leading-5 text-[#7a857d]">Your account is secured by Supabase authentication.</p>
         </section>
       </div>
