@@ -46,8 +46,15 @@ router.post('/manual', async (req, res) => {
     if (!context) return;
 
     const userId = context.jwtClaims.sub;
+    const userEmail = context.jwtClaims.email || `${userId}@anonymous.gigproof`;
     const platform = parsed.data.platform;
     const supabase = context.supabaseAdmin;
+
+    // Ensure the user row exists in public.users to satisfy foreign key constraints
+    await supabase.from('users').upsert(
+      { id: userId, email: userEmail },
+      { onConflict: 'id', ignoreDuplicates: true }
+    );
 
     const { data: existingConnection, error: lookupError } = await supabase
       .from('gig_connections')
@@ -88,9 +95,9 @@ router.post('/manual', async (req, res) => {
       verificationStatus: 'Self-Reported',
     });
   } catch (error) {
-    console.error('Manual income insertion failed:', error?.name || 'unknown error');
+    console.error('Manual income insertion failed:', error?.message || error?.name || error);
     return res.status(500).json({
-      error: { code: 'INCOME_SAVE_FAILED', message: 'We could not save this income entry. Try again.' },
+      error: { code: 'INCOME_SAVE_FAILED', message: error?.message || 'We could not save this income entry. Try again.' },
     });
   }
 });
