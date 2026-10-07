@@ -57,8 +57,16 @@ export default function ReportsPage({ onOpenManual }) {
           </div>
           <div className="report-metric-cell">
             <span className="cell-label">Reliability Index</span>
-            <strong className="cell-val">{reliabilityScore} <small>/ 100</small></strong>
-            <span className="cell-sub">12-month consistency</span>
+            <strong className="cell-val">
+              {incomeProfile?.isPurelyManual ? (
+                'Unverified'
+              ) : (
+                <>{reliabilityScore} <small>/ 100</small></>
+              )}
+            </strong>
+            <span className="cell-sub">
+              {incomeProfile?.isPurelyManual ? 'Self-reported records' : '12-month consistency'}
+            </span>
           </div>
           <div className="report-metric-cell">
             <span className="cell-label">Trailing Annual Gross</span>

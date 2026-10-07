@@ -5,6 +5,7 @@ import Icon from './Icon.jsx';
 export default function ReliabilityPanel() {
   const { incomeProfile, displayConnections, mockDataEnabled } = useIncome();
 
+  const isPurelyManual = incomeProfile?.isPurelyManual;
   const score = Math.round(incomeProfile?.reliabilityScore ?? 0);
   const activeMonths = incomeProfile?.activeMonths ?? 0;
   const platformCount = displayConnections?.length ?? 0;
@@ -13,7 +14,11 @@ export default function ReliabilityPanel() {
   let statusClass = 'strong';
   let explanation = 'Your income has been steady across multiple sources this year.';
 
-  if (score === 0) {
+  if (isPurelyManual) {
+    statusLabel = 'Unverified';
+    statusClass = 'unverified';
+    explanation = 'Income records are self-reported. Official reliability ratings require API verification.';
+  } else if (score === 0) {
     statusLabel = 'Pending Data';
     statusClass = 'pending';
     explanation = 'Add your income payouts to compute your reliability score.';
@@ -30,8 +35,8 @@ export default function ReliabilityPanel() {
   const factors = [
     {
       label: 'Income consistency',
-      value: score > 75 ? 'Strong' : score > 40 ? 'Moderate' : 'Developing',
-      width: `${Math.max(10, Math.min(100, score))}%`,
+      value: isPurelyManual ? 'Self-Reported' : score > 75 ? 'Strong' : score > 40 ? 'Moderate' : 'Developing',
+      width: isPurelyManual ? '40%' : `${Math.max(10, Math.min(100, score))}%`,
     },
     {
       label: 'Active income months',
@@ -58,9 +63,18 @@ export default function ReliabilityPanel() {
       </div>
 
       <div className="score-reading">
-        <span className="score-number">{score}</span>
-        <span className="score-out-of">/ 100</span>
+        {isPurelyManual ? (
+          <span className="score-number score-unverified-tag">Unverified</span>
+        ) : (
+          <>
+            <span className="score-number">{score}</span>
+            <span className="score-out-of">/ 100</span>
+          </>
+        )}
       </div>
+      <p className="score-disclaimer">
+        Score is based on API-verified sources. Self-reported income is unverified.
+      </p>
       <p className="score-explanation">{explanation}</p>
 
       <div className="score-factors">

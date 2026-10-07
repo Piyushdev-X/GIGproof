@@ -147,8 +147,11 @@ export function IncomeProvider({ children, session }) {
       return {
         adjustedMonthlyIncome: 35000,
         reliabilityScore: 100,
+        scoreDisplay: '100',
+        scoreDisclaimer: '',
+        isPurelyManual: false,
         annualGross: demoMonthlyIncome.reduce((sum, m) => sum + m.total, 0),
-        verificationStatus: 'Self-Reported',
+        verificationStatus: 'API Verified',
         activeMonths: 12,
         isSample: true,
         months: demoMonthlyIncome,

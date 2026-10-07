@@ -50,7 +50,11 @@ export default function OverviewPage({ onOpenManual, onOpenConnect }) {
       </div>
 
       {isEmpty ? (
-        <EmptyState onAddIncome={onOpenManual} onEnableMock={toggleMockData} />
+        <EmptyState
+          onAddIncome={onOpenManual}
+          onConnectAccount={onOpenConnect}
+          onEnableMock={toggleMockData}
+        />
       ) : (
         <>
           <section className="summary-band" aria-label="Income summary">

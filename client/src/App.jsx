@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import Auth from './components/Auth.jsx';
 import ConnectAccountDialog from './components/ConnectAccountDialog.jsx';
 import DashboardSidebar from './components/DashboardSidebar.jsx';
 import GuestBanner from './components/GuestBanner.jsx';
+import GuestConvertModal from './components/GuestConvertModal.jsx';
+import Icon from './components/Icon.jsx';
 import ManualEntryDialog from './components/ManualEntryDialog.jsx';
 import { IncomeProvider } from './context/IncomeContext.jsx';
+import { ToastProvider } from './context/ToastContext.jsx';
 import { supabase } from './lib/supabase.js';
 import ConnectionsPage from './pages/ConnectionsPage.jsx';
 import IncomeHistoryPage from './pages/IncomeHistoryPage.jsx';
@@ -15,7 +18,15 @@ import ReportsPage from './pages/ReportsPage.jsx';
 function DashboardLayout({ session, userEmail, isGuest, onSignOut, signOutBusy, signOutError }) {
   const [connectOpen, setConnectOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
+  const [manualPlatform, setManualPlatform] = useState('');
+  const [convertOpen, setConvertOpen] = useState(false);
+
   const initials = isGuest ? '👤' : (userEmail || 'GW').slice(0, 2).toUpperCase();
+
+  const handleOpenManual = (platform = '') => {
+    setManualPlatform(typeof platform === 'string' ? platform : '');
+    setManualOpen(true);
+  };
 
   return (
     <IncomeProvider session={session}>
@@ -25,6 +36,7 @@ function DashboardLayout({ session, userEmail, isGuest, onSignOut, signOutBusy, 
           isGuest={isGuest}
           onSignOut={onSignOut}
           signOutBusy={signOutBusy}
+          onOpenConvert={() => setConvertOpen(true)}
         />
         <main className="workspace-main">
           <header className="mobile-topbar">
@@ -46,14 +58,19 @@ function DashboardLayout({ session, userEmail, isGuest, onSignOut, signOutBusy, 
           </header>
 
           <div className="workspace-inner">
-            {isGuest && <GuestBanner />}
+            {isGuest && (
+              <GuestBanner
+                onOpenConvert={() => setConvertOpen(true)}
+                onConverted={() => setConvertOpen(false)}
+              />
+            )}
 
             <Routes>
               <Route
                 path="/"
                 element={
                   <OverviewPage
-                    onOpenManual={() => setManualOpen(true)}
+                    onOpenManual={handleOpenManual}
                     onOpenConnect={() => setConnectOpen(true)}
                   />
                 }
@@ -61,20 +78,20 @@ function DashboardLayout({ session, userEmail, isGuest, onSignOut, signOutBusy, 
               <Route path="/overview" element={<Navigate to="/" replace />} />
               <Route
                 path="/income-history"
-                element={<IncomeHistoryPage onOpenManual={() => setManualOpen(true)} />}
+                element={<IncomeHistoryPage onOpenManual={handleOpenManual} />}
               />
               <Route
                 path="/connections"
                 element={
                   <ConnectionsPage
-                    onOpenManual={() => setManualOpen(true)}
+                    onOpenManual={handleOpenManual}
                     onOpenConnect={() => setConnectOpen(true)}
                   />
                 }
               />
               <Route
                 path="/reports"
-                element={<ReportsPage onOpenManual={() => setManualOpen(true)} />}
+                element={<ReportsPage onOpenManual={handleOpenManual} />}
               />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
@@ -87,8 +104,39 @@ function DashboardLayout({ session, userEmail, isGuest, onSignOut, signOutBusy, 
           </div>
         </main>
 
+        <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
+          <NavLink to="/" end className={({ isActive }) => isActive ? 'is-active' : ''}>
+            <Icon name="overview" size={20} />
+            <span>Overview</span>
+          </NavLink>
+          <NavLink to="/income-history" className={({ isActive }) => isActive ? 'is-active' : ''}>
+            <Icon name="income" size={20} />
+            <span>History</span>
+          </NavLink>
+          <NavLink to="/connections" className={({ isActive }) => isActive ? 'is-active' : ''}>
+            <Icon name="links" size={20} />
+            <span>Sources</span>
+          </NavLink>
+          <NavLink to="/reports" className={({ isActive }) => isActive ? 'is-active' : ''}>
+            <Icon name="report" size={20} />
+            <span>Report</span>
+          </NavLink>
+        </nav>
+
         <ConnectAccountDialog open={connectOpen} onClose={() => setConnectOpen(false)} />
-        <ManualEntryDialog open={manualOpen} onClose={() => setManualOpen(false)} />
+        <ManualEntryDialog
+          open={manualOpen}
+          initialPlatform={manualPlatform}
+          onClose={() => {
+            setManualOpen(false);
+            setManualPlatform('');
+          }}
+        />
+        <GuestConvertModal
+          open={convertOpen}
+          onClose={() => setConvertOpen(false)}
+          onConverted={() => setConvertOpen(false)}
+        />
       </div>
     </IncomeProvider>
   );
@@ -153,18 +201,22 @@ export default function App() {
     );
   }
 
-  if (!session) return <Auth initialError={authError} />;
-
   return (
-    <BrowserRouter>
-      <DashboardLayout
-        session={session}
-        userEmail={session.user?.email || ''}
-        isGuest={session.user?.is_anonymous === true}
-        onSignOut={handleSignOut}
-        signOutBusy={signOutBusy}
-        signOutError={signOutError}
-      />
-    </BrowserRouter>
+    <ToastProvider>
+      {!session ? (
+        <Auth initialError={authError} />
+      ) : (
+        <BrowserRouter>
+          <DashboardLayout
+            session={session}
+            userEmail={session.user?.email || ''}
+            isGuest={session.user?.is_anonymous === true}
+            onSignOut={handleSignOut}
+            signOutBusy={signOutBusy}
+            signOutError={signOutError}
+          />
+        </BrowserRouter>
+      )}
+    </ToastProvider>
   );
 }

@@ -109,6 +109,7 @@ export function calculateIncomeProfile(payouts = [], asOfInput = new Date()) {
 
   const hasUnverifiedIncome = inWindow.some((payout) => payout.is_verified === false || payout.isVerified === false || payout.source_type === 'manual');
   const allIncomeIsApiVerified = inWindow.length > 0 && inWindow.every((payout) => payout.is_verified === true || payout.isVerified === true);
+  const isPurelyManual = inWindow.length > 0 && inWindow.every((payout) => payout.is_verified === false || payout.isVerified === false || payout.source_type === 'manual');
   const verificationStatus = allIncomeIsApiVerified ? 'API Verified' : 'Self-Reported';
 
   const baseScore = annualGross === 0
@@ -122,9 +123,15 @@ export function calculateIncomeProfile(payouts = [], asOfInput = new Date()) {
     ));
   const reliabilityScore = baseScore * (hasUnverifiedIncome ? 0.8 : 1);
 
+  const scoreDisplay = isPurelyManual ? 'Unverified' : (annualGross === 0 ? '0' : String(Math.round(reliabilityScore)));
+  const scoreDisclaimer = 'Score is based on API-verified sources. Self-reported income is unverified.';
+
   return {
     adjustedMonthlyIncome: round(adjustedMonthlyIncome),
     reliabilityScore: round(reliabilityScore, 1),
+    scoreDisplay,
+    scoreDisclaimer,
+    isPurelyManual,
     baseReliabilityScore: round(baseScore, 1),
     verificationPenaltyMultiplier: hasUnverifiedIncome ? 0.8 : 1,
     verificationStatus,

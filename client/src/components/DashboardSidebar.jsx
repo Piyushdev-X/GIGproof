@@ -9,7 +9,7 @@ const navigation = [
   { label: 'Reports', icon: 'report', to: '/reports' },
 ];
 
-export default function DashboardSidebar({ userEmail = '', isGuest = false, onSignOut, signOutBusy = false }) {
+export default function DashboardSidebar({ userEmail = '', isGuest = false, onSignOut, signOutBusy = false, onOpenConvert }) {
   const displayName = isGuest ? 'Guest' : (userEmail || 'Gig worker');
   const initials = isGuest ? '👤' : (userEmail || 'GW').slice(0, 2).toUpperCase();
 
@@ -41,7 +41,16 @@ export default function DashboardSidebar({ userEmail = '', isGuest = false, onSi
         {isGuest && (
           <div className="rail-guest-notice">
             <Icon name="shield" size={15} />
-            <span>Guest session — <a href="#guest-banner" className="rail-guest-link">save account</a></span>
+            <span>
+              Guest session —{' '}
+              <button
+                type="button"
+                className="rail-guest-action-btn"
+                onClick={onOpenConvert}
+              >
+                save account
+              </button>
+            </span>
           </div>
         )}
 

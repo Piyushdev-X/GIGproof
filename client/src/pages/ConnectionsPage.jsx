@@ -31,7 +31,7 @@ export default function ConnectionsPage({ onOpenManual, onOpenConnect }) {
         </div>
         <div className="page-actions">
           <MockDataToggle variant="header" />
-          <button className="button-primary" type="button" onClick={onOpenManual}>
+          <button className="button-primary" type="button" onClick={() => onOpenManual('')}>
             <Icon name="plus" size={17} /> Add income manually
           </button>
           <button
@@ -66,11 +66,19 @@ export default function ConnectionsPage({ onOpenManual, onOpenConnect }) {
 
               <div className="platform-card-footer">
                 {isConnected ? (
-                  <button className="card-action-btn is-active-btn" type="button" onClick={onOpenManual}>
+                  <button
+                    className="card-action-btn is-active-btn"
+                    type="button"
+                    onClick={() => onOpenManual(platform.name)}
+                  >
                     + Add new payout
                   </button>
                 ) : (
-                  <button className="card-action-btn" type="button" onClick={onOpenManual}>
+                  <button
+                    className="card-action-btn"
+                    type="button"
+                    onClick={() => onOpenManual(platform.name)}
+                  >
                     + Add manually
                   </button>
                 )}

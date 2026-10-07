@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 
-export default function GuestBanner({ onConverted }) {
+export default function GuestBanner({ onConverted, onOpenConvert }) {
   const [showForm, setShowForm] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,7 +48,7 @@ export default function GuestBanner({ onConverted }) {
             <button
               type="button"
               className="guest-banner-cta"
-              onClick={() => setShowForm(true)}
+              onClick={onOpenConvert || (() => setShowForm(true))}
               id="guest-convert-btn"
             >
               Create a permanent account →

@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useIncome } from '../context/IncomeContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import { supabase } from '../lib/supabase.js';
 import Icon from './Icon.jsx';
 
 const platformOptions = ['Zomato', 'Swiggy', 'Ola', 'Uber', 'Urban Company', 'Blinkit', 'Zepto', 'Upwork', 'Other'];
 
-export default function ManualEntryDialog({ open, onClose }) {
+export default function ManualEntryDialog({ open, onClose, initialPlatform = '' }) {
   const dialogRef = useRef(null);
   const { addPayout } = useIncome();
+  const { showToast } = useToast();
   const [date, setDate] = useState('');
   const [amount, setAmount] = useState('');
   const [platform, setPlatform] = useState('');
@@ -16,11 +18,36 @@ export default function ManualEntryDialog({ open, onClose }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Handle open state and context-aware platform pre-fill
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
+    if (!dialog) return;
+
+    if (open && !dialog.open) {
+      setError('');
+      setSuccess('');
+      setDate(new Date().toISOString().slice(0, 10));
+
+      if (initialPlatform) {
+        if (platformOptions.includes(initialPlatform)) {
+          setPlatform(initialPlatform);
+          setCustomPlatform('');
+        } else {
+          setPlatform('Other');
+          setCustomPlatform(initialPlatform);
+        }
+      } else {
+        setPlatform('');
+        setCustomPlatform('');
+      }
+
+      dialog.showModal();
+    }
+
+    if (!open && dialog.open) {
+      dialog.close();
+    }
+  }, [open, initialPlatform]);
 
   function resetForm() {
     setDate('');
@@ -44,7 +71,7 @@ export default function ManualEntryDialog({ open, onClose }) {
     setBusy(true);
     try {
       if (!supabase) {
-        throw new Error('Supabase is not configured. Add the frontend Supabase URL and publishable key.');
+        throw new Error('Supabase is not configured.');
       }
       const { data, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
@@ -61,7 +88,7 @@ export default function ManualEntryDialog({ open, onClose }) {
         source_type: 'manual',
       };
 
-      // 1. Immediately update client-side state for instant UI responsiveness
+      // 1. Instant reactivity: update local context state immediately
       addPayout(newEntry);
 
       // 2. Persist to API / Supabase in background
@@ -75,17 +102,14 @@ export default function ManualEntryDialog({ open, onClose }) {
           },
           body: JSON.stringify({ payoutDate: date, amount: Number(amount), platform: sourcePlatform }),
         });
-        const result = await response.json().catch(() => ({}));
         if (response.ok) {
           saved = true;
         } else if (response.status === 401) {
           throw new Error('Sign in to save an income entry.');
-        } else {
-          console.warn('API error, attempting direct Supabase fallback:', result);
         }
       } catch (fetchErr) {
         if (fetchErr.message === 'Sign in to save an income entry.') throw fetchErr;
-        console.warn('API route unreachable, attempting direct Supabase fallback:', fetchErr);
+        console.warn('API unreachable, using direct Supabase fallback:', fetchErr);
       }
 
       if (!saved) {
@@ -132,13 +156,16 @@ export default function ManualEntryDialog({ open, onClose }) {
         if (payoutErr) throw new Error(payoutErr.message);
       }
 
-      setSuccess('Income added as self-reported. It is not API verified.');
+      setSuccess('Income payout added as self-reported.');
+      showToast(`Added ₹${Number(amount).toLocaleString('en-IN')} payout from ${sourcePlatform}.`, 'success');
       window.setTimeout(() => {
         resetForm();
         onClose();
-      }, 700);
+      }, 500);
     } catch (submitError) {
-      setError(submitError.message || 'Unable to save income entry. Try again.');
+      const msg = submitError.message || 'Unable to save income entry. Try again.';
+      setError(msg);
+      showToast(msg, 'error');
     } finally {
       setBusy(false);
     }
@@ -149,11 +176,18 @@ export default function ManualEntryDialog({ open, onClose }) {
       className="connect-dialog manual-entry-dialog"
       ref={dialogRef}
       aria-labelledby="manual-entry-title"
-      onClose={() => { resetForm(); onClose(); }}
-      onClick={(event) => { if (event.target === dialogRef.current && !busy) dialogRef.current.close(); }}
+      onClose={() => {
+        resetForm();
+        onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === dialogRef.current && !busy) dialogRef.current.close();
+      }}
     >
       <div className="dialog-head">
-        <div className="dialog-symbol"><Icon name="plus" size={20} /></div>
+        <div className="dialog-symbol">
+          <Icon name="plus" size={20} />
+        </div>
         <button
           className="dialog-close"
           type="button"
@@ -165,9 +199,14 @@ export default function ManualEntryDialog({ open, onClose }) {
         </button>
       </div>
       <h2 id="manual-entry-title">Add income manually</h2>
-      <p className="dialog-intro">Enter a payout you received. Manual entries are marked as self-reported and are not API verified.</p>
+      <p className="dialog-intro">
+        {initialPlatform
+          ? `Record a direct earnings payout received from ${initialPlatform}.`
+          : 'Enter a payout you received. Manual entries are marked as self-reported.'}
+      </p>
       <form className="manual-entry-form" onSubmit={handleSubmit}>
-        <label className="form-field" htmlFor="manual-payout-date">Date received
+        <label className="form-field" htmlFor="manual-payout-date">
+          Date received
           <input
             id="manual-payout-date"
             type="date"
@@ -177,7 +216,8 @@ export default function ManualEntryDialog({ open, onClose }) {
             max={new Date().toISOString().slice(0, 10)}
           />
         </label>
-        <label className="form-field" htmlFor="manual-payout-amount">Amount (INR)
+        <label className="form-field" htmlFor="manual-payout-amount">
+          Amount (INR)
           <span className="amount-input-wrap">
             <span aria-hidden="true">₹</span>
             <input
@@ -194,7 +234,8 @@ export default function ManualEntryDialog({ open, onClose }) {
             />
           </span>
         </label>
-        <label className="form-field" htmlFor="manual-payout-platform">Source / platform
+        <label className="form-field" htmlFor="manual-payout-platform">
+          Source / platform
           <select
             id="manual-payout-platform"
             value={platform}
@@ -208,19 +249,21 @@ export default function ManualEntryDialog({ open, onClose }) {
           </select>
         </label>
         {platform === 'Other' && (
-          <label className="form-field" htmlFor="manual-payout-custom-platform">Platform name
+          <label className="form-field" htmlFor="manual-payout-custom-platform">
+            Platform name
             <input
               id="manual-payout-custom-platform"
               type="text"
               maxLength={80}
               value={customPlatform}
               onChange={(event) => setCustomPlatform(event.target.value)}
+              placeholder="e.g. Swiggy, Dunzo, Direct Client"
               required
             />
           </label>
         )}
         <p className="manual-entry-note">
-          <Icon name="shield" size={15} /> This entry will be stored as unverified income.
+          <Icon name="shield" size={15} /> This entry will be stored as unverified self-reported income.
         </p>
         {error && <p className="form-feedback form-error" role="alert">{error}</p>}
         {success && <p className="form-feedback form-success" role="status">{success}</p>}
